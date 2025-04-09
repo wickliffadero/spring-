@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Fraud Detection System</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            max-width: 900px; /* Increased max-width */
+            margin: 20px auto; /* Center the container */
+        }
+        header {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .dashboard-content {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .dashboard-content p {
+            font-size: 1.1em;
+            color: #555;
+            line-height: 1.6;
+        }
+        .logout-form {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .logout-form button {
+            background-color: #dc3545; /* Red for logout */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .logout-form button:hover {
+            background-color: #c82333;
+        }
+        nav {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        nav ul li a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1em;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .transaction-history, .flagged-transactions {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .transaction-list, .flagged-transaction-list {
+            list-style: none;
+            padding: 0;
+        }
+        .transaction-item, .flagged-transaction-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .transaction-item:last-child, .flagged-transaction-item:last-child {
+            border-bottom: none;
+        }
+        .transaction-details, .flagged-transaction-details {
+            flex-grow: 1;
+        }
+        .transaction-details p, .flagged-transaction-details p {
+            margin: 5px 0;
+        }
+        .flagged {
+            color: #ff9800; /* Orange for flagged */
+            font-weight: bold;
+        }
+        .failed {
+            color: #dc3545; /* Red for failed */
+            font-weight: bold;
+        }
+        .success {
+            color: #28a745; /* Green for success */
+            font-weight: bold;
+        }
+        .status-message {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Welcome to your Dashboard, <span sec:authentication="name"></span>!</h1>
+    </header>
+
+    <div class="dashboard-content">
+        <p>This is your secure dashboard area for the online payment fraud detection system.</p>
+        <p>Your phone number: <span th:text="${phoneNumber}"></span></p>
+        <p>From here, you can monitor your transaction history and any flagged transactions.</p>
+    </div>
+
+    <div class="logout-form">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+
+    <nav>
+        <ul>
+<!--            <li><a href="/dashboard">Dashboard</a></li>-->
+<!--            <li><a href="/profile">Profile</a></li>-->
+<!--            <li><a href="/payment-history">Payment History</a></li>-->
+<!--            <li><a href="/report-issue">Report Issue</a></li>-->
+        </ul>
+    </nav>
+
+    <div class="transaction-history">
+        <h2>Transaction History</h2>
+        <div th:if="${#lists.isEmpty(transactions)}">
+            <p>No transaction history found for your account.</p>
+        </div>
+        <ul class="transaction-list" th:unless="${#lists.isEmpty(transactions)}">
+            <li class="transaction-item" th:each="transaction : ${transactions}">
+                <div class="transaction-details">
+                    <p><strong>Date:</strong> <span th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
+                    <p><strong>Type:</strong>
+                        <span th:if="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Sent to: ' + ${transaction.recipientPhoneNumber}"></span>
+                        <span th:unless="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Received from: ' + ${transaction.senderPhoneNumber}"></span>
+                    </p>
+                    <p><strong>Amount:</strong> <span th:text="${transaction.amount}"></span></p>
+                    <p><strong>Status:</strong>
+                        <span class="success" th:if="${#strings.contains(transaction.transactionType, 'SUCCESSFUL')}">Successful</span>
+                        <span class="failed" th:if="${#strings.contains(transaction.transactionType, 'FAILED') or #strings.contains(transaction.transactionType, 'CANCELLED') or #strings.contains(transaction.transactionType, 'BLOCKED')}">Failed</span>
+                        <span class="flagged" th:if="${#strings.contains(transaction.transactionType, 'FLAGGED')}">Flagged</span>
+                    </p>
+                    <p class="status-message" th:if="${transaction.transactionStatusMessage}" th:text="${transaction.transactionStatusMessage}"></p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="flagged-transactions">
+        <h2>Flagged Transactions</h2>
+        <div th:if="${#lists.isEmpty(flaggedTransactions)}">
+            <p>No flagged transactions found for your account.</p>
+        </div>
+        <ul class="flagged-transaction-list" th:unless="${#lists.isEmpty(flaggedTransactions)}">
+            <li class="flagged-transaction-item" th:each="transaction : ${flaggedTransactions}">
+                <div class="flagged-transaction-details">
+                    <p><strong>Date:</strong> <span th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
+                    <p><strong>Type:</strong>
+                        <span th:if="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Sent to: ' + ${transaction.recipientPhoneNumber}"></span>
+                        <span th:unless="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Received from: ' + ${transaction.senderPhoneNumber}"></span>
+                    </p>
+                    <p><strong>Amount:</strong> <span th:text="${transaction.amount}"></span></p>
+                    <p class="flagged"><strong>Reason:</strong> <span th:text="${transaction.transactionStatusMessage}"></span></p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Fraud Detection System</p>
+
+    </footer>
+</div>
+</body>
+</html>

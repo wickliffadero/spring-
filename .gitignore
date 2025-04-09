@@ -1,0 +1,106 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+# Compiled class files
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+target/
+bin/
+
+# IDE-specific files
+.idea/
+.classpath
+.project
+.settings/
+*.iml
+*.ipr
+*.iws
+
+# Build output
+build/
+
+# Log files
+*.log
+
+# Package files (JAR, WAR, etc.)
+*.jar
+*.war
+*.ear
+
+# Spring Boot DevTools active profile properties
+application-dev.properties
+application-local.properties # If you have a local profile
+
+# IntelliJ IDEA related (if not using .idea/)
+out/
+
+# Eclipse related (if not using .project, .classpath, .settings/)
+.apt_generated/
+.factorypath/
+
+# NetBeans related
+nbproject/
+
+# VS Code related
+.vscode/
+
+# Operating system specific files
+.DS_Store
+Thumbs.db
+
+# Gradle build files (if using Gradle)
+.gradle/
+build/
+settings.gradle.kts.lockfile
+*.lockfile
+gradle-app.setting
+gradle-build-cache/
+
+# Maven build files (if not using .mvn/wrapper)
+pom.xml.lock
+.repository/ # Consider if you want to ignore your local Maven repo
+
+# Docker related
+docker-compose.override.yml
+docker-compose.yml.backup
+
+# Environment files (consider carefully if you have sensitive info)
+.env
+*.env.local
+*.env.development
+*.env.test
+*.env.production
+
+# Other temporary files or directories you might want to ignore
+tmp/
+temp/
