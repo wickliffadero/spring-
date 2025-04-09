@@ -2,6 +2,7 @@ package com.example.frauddetction.Controller;
 
 import com.example.frauddetction.Repository.UserAccountRepository;
 import com.example.frauddetction.model.UseraccountEntity;
+import com.example.frauddetction.service.UserRoleService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,9 @@ public class UserAccountController {
 
     @Autowired
     private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private UserRoleService userRoleService;
 
     @GetMapping("/createaccount")
     public String showCreateAccountForm(Model model, HttpServletRequest request) {
@@ -76,7 +80,6 @@ public class UserAccountController {
             return "createaccount";
         }
 
-
         // Display the form data to the console
         System.out.println("--- Form Data ---");
         System.out.println("Username: " + useraccountEntity.getUsername());
@@ -127,10 +130,21 @@ public class UserAccountController {
         String hashedPassword = passwordEncoder.encode(useraccountEntity.getPassword());
         useraccountEntity.setPassword(hashedPassword);
 
-        // 5. Save the account to the database
+        // 5. Set default role to USER
+        useraccountEntity.setRole("USER");
+
+        // 6. Set default account status to active
+        useraccountEntity.setAccountStatus("ACTIVE");
+
+        // 7. Save the account to the database
         userAccountRepository.save(useraccountEntity);
 
-        // 6. Redirect or show a success message
+        // 8. If this is the first user, make them an admin
+        if (userAccountRepository.count() == 1) {
+            userRoleService.makeUserAdmin(useraccountEntity.getUsername());
+        }
+
+        // 9. Redirect or show a success message
         model.addAttribute("message", "Account created successfully!");
         return "login";
     }

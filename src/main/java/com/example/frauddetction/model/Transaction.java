@@ -86,4 +86,7 @@ public class Transaction {
     public void setTransactionStatusMessage(String transactionStatusMessage) {
         this.transactionStatusMessage = transactionStatusMessage;
     }
+
+    public void setStatusMessage(String success) {
+    }
 }

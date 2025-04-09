@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Flagged Transactions - Admin Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .flagged-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .flagged-table th, .flagged-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .flagged-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .status-message {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .back-button {
+            background-color: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
+        .amount {
+            font-weight: bold;
+        }
+        .high-amount {
+            color: #e74c3c;
+        }
+        .medium-amount {
+            color: #f39c12;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Flagged Transactions</h1>
+        </header>
+
+        <div class="action-buttons">
+            <a href="/admin/dashboard" class="back-button">Back to Dashboard</a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(flaggedTransactions)}">
+            <p>No flagged transactions found in the system.</p>
+        </div>
+
+        <table class="flagged-table" th:unless="${#lists.isEmpty(flaggedTransactions)}">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Status Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="transaction : ${flaggedTransactions}">
+                    <td th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="${transaction.senderPhoneNumber}"></td>
+                    <td th:text="${transaction.recipientPhoneNumber}"></td>
+                    <td>
+                        <span th:text="${transaction.amount}"
+                              th:class="'amount ' + ${transaction.amount > 10000 ? 'high-amount' : 
+                              (transaction.amount > 5000 ? 'medium-amount' : '')}">
+                        </span>
+                    </td>
+                    <td th:text="${transaction.transactionType}"></td>
+                    <td class="status-message" th:text="${transaction.transactionStatusMessage}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

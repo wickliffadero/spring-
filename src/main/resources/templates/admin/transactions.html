@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard - Transactions</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .transaction-table th, .transaction-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .transaction-table th {
+            background-color: #f5f5f5;
+        }
+        .transaction-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .transaction-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .status-success {
+            color: green;
+        }
+        .status-pending {
+            color: orange;
+        }
+        .status-failed {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-header">
+            <h1>Transaction Management</h1>
+            <a href="/dashboard" class="btn">Back to Dashboard</a>
+        </div>
+
+        <div class="table-container">
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Sender</th>
+                        <th>Recipient</th>
+                        <th>Amount</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="transaction : ${transactions}">
+                        <td th:text="${transaction.id}"></td>
+                        <td th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td th:text="${transaction.senderPhoneNumber}"></td>
+                        <td th:text="${transaction.recipientPhoneNumber}"></td>
+                        <td th:text="${transaction.amount}"></td>
+                        <td th:text="${transaction.transactionType}"></td>
+                        <td th:text="${transaction.transactionStatusMessage}"
+                            th:class="${transaction.transactionStatusMessage == 'Success'} ? 'status-success' : 
+                                     (${transaction.transactionStatusMessage == 'Pending'} ? 'status-pending' : 'status-failed')">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

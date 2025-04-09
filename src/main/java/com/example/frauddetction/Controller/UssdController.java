@@ -1,216 +1,186 @@
 package com.example.frauddetction.Controller;
 
 import com.example.frauddetction.Repository.TransactionRepository;
-import com.example.frauddetction.Repository.UssdUserAccountRepository;
-import com.example.frauddetction.model.Transaction;
+import com.example.frauddetction.Repository.UserAccountRepository;
+import com.example.frauddetction.service.CustomUssdUserService;
 import com.example.frauddetction.model.UssdUserAccount;
+import com.example.frauddetction.model.Transaction;
+import com.example.frauddetction.model.UseraccountEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/ussd")
 public class UssdController {
+    @Autowired
+    private CustomUssdUserService ussdUserService;
 
     @Autowired
-    private UssdUserAccountRepository ussdUserAccountRepository;
+    private UserAccountRepository userAccountRepository;
 
     @Autowired
     private TransactionRepository transactionRepository;
 
-    private final Map<String, Map<String, String>> sessionData = new HashMap<>();
+    private static final String MAIN_MENU = "CON Welcome to Mobile Money\n" +
+            "1. Send Money\n" +
+            "2. Check Balance\n" +
+            "3. Buy Airtime\n" +
+            "4. Exit";
 
-    @PostMapping
-    public String handleUssdRequest(@RequestParam Map<String, String> body) {
-        String sessionId = body.get("sessionId");
-        String serviceCode = body.get("serviceCode");
-        String phoneNumber = body.get("phoneNumber");
-        String text = body.get("text");
-        String lastInput = "";
+    private static final String SEND_MONEY_PROMPT = "CON Enter recipient's phone number:";
+    private static final String AMOUNT_PROMPT = "CON Enter amount to send:";
+    private static final String AIRTIME_AMOUNT_PROMPT = "CON Enter amount of airtime to buy:";
+    private static final String INVALID_INPUT = "END Invalid input. Please try again.";
+    private static final String EXIT_MESSAGE = "END Thank you for using our service.";
+    private static final String BLACKLISTED_MESSAGE = "END Sorry, your account has been blacklisted. Please contact support.";
 
-        StringBuilder response = new StringBuilder();
-        String normalizedPhoneNumber = normalizePhoneNumberForDatabase(phoneNumber);
+    @PostMapping("/process")
+    public String processUssdRequest(
+            @RequestParam String sessionId,
+            @RequestParam String serviceCode,
+            @RequestParam String phoneNumber,
+            @RequestParam String text) {
 
-        System.out.println("Session ID: " + sessionId);
-        System.out.println("Service Code: " + serviceCode);
-        System.out.println("Sender Phone Number (Session): " + phoneNumber);
-        System.out.println("Normalized Sender Phone Number (Database): " + normalizedPhoneNumber);
-        System.out.println("Full Text Input: " + text);
-        System.out.println("Session Data: " + sessionData);
-
-        String[] inputs = text.split("\\*");
-        if (inputs.length > 0) {
-            lastInput = inputs[inputs.length - 1].trim();
-            System.out.println("Last Input: " + lastInput);
+        // Check if user is blacklisted
+        UseraccountEntity user = userAccountRepository.findByPhoneNumber(phoneNumber);
+        if (user != null && "BLACKLISTED".equals(user.getAccountStatus())) {
+            return BLACKLISTED_MESSAGE;
         }
 
-        sessionData.computeIfAbsent(sessionId, k -> new HashMap<>());
-        Map<String, String> currentSession = sessionData.get(sessionId);
+        if (text.isEmpty()) {
+            return MAIN_MENU;
+        }
 
-        if (text == null || text.isEmpty()) {
-            response.append("welcome\n\n1. Check my balance\n\n2. Send money");
-        } else if ("1".equals(lastInput) && !currentSession.containsKey("stage")) { // Check balance only at the main menu
-            Optional<UssdUserAccount> ussdUserAccountOpt = ussdUserAccountRepository.findByPhoneNumber(normalizedPhoneNumber);
-            if (ussdUserAccountOpt.isPresent()) {
-                UssdUserAccount ussdUserAccount = ussdUserAccountOpt.get();
-                response.append("END Your Account balance is $").append(ussdUserAccount.getBalance());
-            } else {
-                response.append("Your phoneNumber. " +phoneNumber+" is not registered!");
-            }
-            sessionData.remove(sessionId);
-        } else if ("2".equals(lastInput) && !currentSession.containsKey("stage")) { // Send money from the main menu
-            response.append("CON Enter the recipient's phone number:");
-            currentSession.put("stage", "enter_recipient_number");
-        } else if (currentSession.containsKey("stage") && "enter_recipient_number".equals(currentSession.get("stage"))) {
-            String recipientPhoneNumberInput = lastInput;
-            System.out.println("Recipient Phone Number (Input): " + recipientPhoneNumberInput);
-            if (!isValidRecipientPhoneNumber(recipientPhoneNumberInput, normalizedPhoneNumber)) {
-                response.append("END Invalid phone number. Ensure the phone number starts with 07 and is 10 digits long.");
-                Transaction cancellation = new Transaction(normalizedPhoneNumber, recipientPhoneNumberInput, 0.0, "SEND_CANCELLED_INVALID_RECIPIENT");
-                transactionRepository.save(cancellation);
-                sessionData.remove(sessionId);
-            } else {
-                String normalizedRecipientPhoneNumberForLookup = normalizePhoneNumberForDatabase(recipientPhoneNumberInput);
-                currentSession.put("recipientPhoneNumber", normalizedRecipientPhoneNumberForLookup);
+        String[] levels = text.split("\\*");
+        String lastInput = levels[levels.length - 1];
 
-                // Check if this is the first time sending to this recipient
-                List<Transaction> previousTransactions = transactionRepository.findBySenderPhoneNumberAndRecipientPhoneNumber(normalizedPhoneNumber, normalizedRecipientPhoneNumberForLookup);
-                boolean isFirstTime = previousTransactions.isEmpty();
-                currentSession.put("firstTimeRecipient", String.valueOf(isFirstTime)); // Store as String
-
-                if (isFirstTime) {
-                    response.append("CON This is the first time sending to this number.\n\n1. Continue"); // Prompt to continue
-                    currentSession.put("stage", "confirm_first_time_recipient");
-                } else {
-                    response.append("CON Enter the amount to send:");
-                    currentSession.put("stage", "capture_amount");
-                }
-            }
-        } else if (currentSession.containsKey("stage") && "confirm_first_time_recipient".equals(currentSession.get("stage")) && "1".equals(lastInput)) {
-            response.append("CON Enter amount:");
-            currentSession.put("stage", "capture_amount");
-        } else if (currentSession.containsKey("stage") && "capture_amount".equals(currentSession.get("stage"))) {
-            String amountText = lastInput.trim();
-            try {
-                double amountToSend = parseAmount(amountText);
-                if (amountToSend <= 0) {
-                    response.append("END Amount must be greater than zero. Please enter a valid amount.");
-                    Transaction cancellation = new Transaction(normalizedPhoneNumber, currentSession.get("recipientPhoneNumber"), amountToSend, "SEND_CANCELLED_INVALID_AMOUNT");
-                    transactionRepository.save(cancellation);
-                    sessionData.remove(sessionId);
-                } else {
-                    String recipientPhoneNumber = currentSession.get("recipientPhoneNumber");
-                    currentSession.put("amountToSend", String.valueOf(amountToSend));
-                    response.append("CON Confirm send $").append(amountToSend).append(" to ").append(recipientPhoneNumber).append("?\n1. Yes\n2. No");
-                    currentSession.put("stage", "confirm_send");
-                }
-            } catch (NumberFormatException e) {
-                response.append("END Invalid amount entered. Please enter a valid number (e.g., 50.00).");
-                Transaction cancellation = new Transaction(normalizedPhoneNumber, currentSession.getOrDefault("recipientPhoneNumber", "N/A"), 0.0, "SEND_CANCELLED_AMOUNT_FORMAT_ERROR");
-                transactionRepository.save(cancellation);
-                sessionData.remove(sessionId);
-            }
-        } else if (currentSession.containsKey("stage") && "confirm_send".equals(currentSession.get("stage"))) {
-            String confirmation = lastInput.trim();
-            double amountToSend = Double.parseDouble(currentSession.get("amountToSend"));
-            String recipientPhoneNumber = currentSession.get("recipientPhoneNumber");
-
-            if ("1".equals(confirmation)) {
-                Optional<UssdUserAccount> senderAccountOpt = ussdUserAccountRepository.findByPhoneNumber(normalizedPhoneNumber);
-
-                if (senderAccountOpt.isPresent()) {
-                    UssdUserAccount senderAccount = senderAccountOpt.get();
-                    if (senderAccount.getBalance() < amountToSend) {
-                        response.append("END Insufficient balance. Transaction failed.");
-                        Transaction failedTransaction = new Transaction(normalizedPhoneNumber, recipientPhoneNumber, amountToSend, "SEND_FAILED_INSUFFICIENT_BALANCE");
-                        transactionRepository.save(failedTransaction);
-                    } else {
-                        Optional<UssdUserAccount> recipientAccountOpt = ussdUserAccountRepository.findByPhoneNumber(recipientPhoneNumber);
-                        if (recipientAccountOpt.isPresent()) {
-                            UssdUserAccount recipientAccount = recipientAccountOpt.get();
-
-                            senderAccount.setBalance(senderAccount.getBalance() - amountToSend);
-                            recipientAccount.setBalance(recipientAccount.getBalance() + amountToSend);
-
-                            ussdUserAccountRepository.save(senderAccount);
-                            ussdUserAccountRepository.save(recipientAccount);
-
-                            Transaction senderTransaction = new Transaction(normalizedPhoneNumber, recipientPhoneNumber, amountToSend, "SEND_SUCCESSFUL");
-                            transactionRepository.save(senderTransaction);
-
-                            Transaction recipientTransaction = new Transaction(recipientPhoneNumber, normalizedPhoneNumber, amountToSend, "RECEIVE_SUCCESSFUL");
-                            transactionRepository.save(recipientTransaction);
-
-                            response.append("END Transaction successful.\n");
-                            response.append("You have sent $").append(amountToSend).append(" to ").append(recipientPhoneNumber).append(".\n");
-                            response.append("Your new balance is $").append(senderAccount.getBalance());
-                        } else {
-                            response.append("END Recipient account not found.");
-                            Transaction failedTransaction = new Transaction(normalizedPhoneNumber, recipientPhoneNumber, amountToSend, "SEND_FAILED_RECIPIENT_NOT_FOUND");
-                            transactionRepository.save(failedTransaction);
-                        }
+        if (levels.length == 1) {
+            switch (lastInput) {
+                case "1":
+                    return SEND_MONEY_PROMPT;
+                case "2":
+                    UssdUserAccount account = ussdUserService.getUserAccount(phoneNumber);
+                    if (account != null) {
+                        return "END Your balance is: " + account.getBalance();
                     }
-                } else {
-                    response.append("END Sender account not found.");
-                    Transaction failedTransaction = new Transaction(normalizedPhoneNumber, recipientPhoneNumber, amountToSend, "SEND_FAILED_SENDER_NOT_FOUND");
-                    transactionRepository.save(failedTransaction);
-                }
-                sessionData.remove(sessionId);
-            } else if ("2".equals(confirmation)) {
-                response.append("END Transaction cancelled by user.");
-                Transaction cancellation = new Transaction(normalizedPhoneNumber, recipientPhoneNumber, amountToSend, "SEND_CANCELLED_BY_USER");
-                transactionRepository.save(cancellation);
-                sessionData.remove(sessionId);
-            } else {
-                response.append("CON Invalid option. Confirm send $").append(amountToSend).append(" to ").append(recipientPhoneNumber).append("?\n1. Yes\n2. No");
+                    return "END Account not found.";
+                case "3":
+                    return AIRTIME_AMOUNT_PROMPT;
+                case "4":
+                    return EXIT_MESSAGE;
+                default:
+                    return INVALID_INPUT;
             }
-        } else {
-            response.append("END Invalid option. Please try again.");
-            sessionData.remove(sessionId);
         }
 
-        printAllUserAccounts();
-        return response.toString();
-    }
+        // Handle Send Money flow
+        if (levels[0].equals("1")) {
+            if (levels.length == 2) {
+                String recipientPhone = lastInput;
+                
+                // Check if recipient is blacklisted
+                UseraccountEntity recipient = userAccountRepository.findByPhoneNumber(recipientPhone);
+                if (recipient != null && "BLACKLISTED".equals(recipient.getAccountStatus())) {
+                    return "END Cannot send money to a blacklisted account.";
+                }
+                
+                UssdUserAccount recipientAccount = ussdUserService.getUserAccount(recipientPhone);
+                if (recipientAccount == null) {
+                    return "END Recipient not found.";
+                }
+                return AMOUNT_PROMPT;
+            } else if (levels.length == 3) {
+                try {
+                    double amount = Double.parseDouble(lastInput);
+                    String recipientPhone = levels[1];
+                    
+                    // Get sender's account
+                    UssdUserAccount senderAccount = ussdUserService.getUserAccount(phoneNumber);
+                    if (senderAccount == null) {
+                        return "END Sender account not found.";
+                    }
 
-    // Normalize the phone number for database lookup
-    private String normalizePhoneNumberForDatabase(String phoneNumber) {
-        phoneNumber = phoneNumber.replaceAll("[^0-9]", "");
-        if (phoneNumber.startsWith("254")) {
-            return phoneNumber.substring(3);
-        }
-        if (phoneNumber.startsWith("0")) {
-            return phoneNumber.substring(1);
-        }
-        return phoneNumber;
-    }
+                    // Check if sender has sufficient balance
+                    if (senderAccount.getBalance() < amount) {
+                        return "END Insufficient balance.";
+                    }
 
-    // Validate if the entered phone number is in the correct format (starts with 07 and is 10 digits)
-    private boolean isValidRecipientPhoneNumber(String phoneNumber, String sessionPhoneNumber) {
-        phoneNumber = phoneNumber.trim();
-        return phoneNumber.startsWith("07") && phoneNumber.length() == 10 && !normalizePhoneNumberForDatabase(phoneNumber).equals(normalizePhoneNumberForDatabase(sessionPhoneNumber));
-    }
+                    // Check if recipient is blacklisted
+                    UseraccountEntity recipient = userAccountRepository.findByPhoneNumber(recipientPhone);
+                    if (recipient != null && "BLACKLISTED".equals(recipient.getAccountStatus())) {
+                        return "END Cannot send money to a blacklisted account.";
+                    }
 
-    // Utility method to parse the amount safely
-    private double parseAmount(String amount) {
-        try {
-            return Double.parseDouble(amount);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
+                    // Get recipient's account
+                    UssdUserAccount recipientAccount = ussdUserService.getUserAccount(recipientPhone);
+                    if (recipientAccount == null) {
+                        return "END Recipient account not found.";
+                    }
 
-    // Method to print all phone numbers and balances in the database for debugging
-    private void printAllUserAccounts() {
-        System.out.println("Printing all user accounts in the database:");
-        Iterable<UssdUserAccount> allUsers = ussdUserAccountRepository.findAll();
-        for (UssdUserAccount user : allUsers) {
-            String normalizedPhone = normalizePhoneNumberForDatabase(user.getPhoneNumber());
-            System.out.println("Phone Number: " + normalizedPhone + ", Balance: $" + user.getBalance());
+                    // Process the transaction
+                    boolean success = ussdUserService.transferMoney(phoneNumber, recipientPhone, amount);
+                    if (success) {
+                        // Create and save transaction record
+                        Transaction transaction = new Transaction();
+                        transaction.setSenderPhoneNumber(phoneNumber);
+                        transaction.setRecipientPhoneNumber(recipientPhone);
+                        transaction.setAmount(amount);
+                        transaction.setTransactionDate(LocalDateTime.now());
+                        transaction.setTransactionType("TRANSFER");
+                        transaction.setStatusMessage("SUCCESS");
+                        transactionRepository.save(transaction);
+
+                        return "END Transfer successful. Amount: " + amount + " sent to " + recipientPhone;
+                    } else {
+                        return "END Transfer failed. Please try again later.";
+                    }
+                } catch (NumberFormatException e) {
+                    return INVALID_INPUT;
+                }
+            }
         }
+
+        // Handle Buy Airtime flow
+        if (levels[0].equals("3")) {
+            if (levels.length == 2) {
+                try {
+                    double amount = Double.parseDouble(lastInput);
+                    UssdUserAccount account = ussdUserService.getUserAccount(phoneNumber);
+                    
+                    if (account == null) {
+                        return "END Account not found.";
+                    }
+
+                    if (account.getBalance() < amount) {
+                        return "END Insufficient balance.";
+                    }
+
+                    // Process airtime purchase
+                    boolean success = ussdUserService.buyAirtime(phoneNumber, amount);
+                    if (success) {
+                        // Create and save transaction record
+                        Transaction transaction = new Transaction();
+                        transaction.setSenderPhoneNumber(phoneNumber);
+                        transaction.setRecipientPhoneNumber(phoneNumber);
+                        transaction.setAmount(amount);
+                        transaction.setTransactionDate(LocalDateTime.now());
+                        transaction.setTransactionType("AIRTIME");
+                        transaction.setStatusMessage("SUCCESS");
+                        transactionRepository.save(transaction);
+
+                        return "END Airtime purchase successful. Amount: " + amount;
+                    } else {
+                        return "END Airtime purchase failed. Please try again later.";
+                    }
+                } catch (NumberFormatException e) {
+                    return INVALID_INPUT;
+                }
+            }
+        }
+
+        return INVALID_INPUT;
     }
 }

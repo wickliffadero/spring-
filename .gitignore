@@ -58,18 +58,8 @@ build/
 *.ear
 
 # Spring Boot DevTools active profile properties
-application-dev.properties
-application-local.properties # If you have a local profile
 
-# IntelliJ IDEA related (if not using .idea/)
-out/
 
-# Eclipse related (if not using .project, .classpath, .settings/)
-.apt_generated/
-.factorypath/
-
-# NetBeans related
-nbproject/
 
 # VS Code related
 .vscode/
