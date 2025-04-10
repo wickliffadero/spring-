@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body th:classappend="${session.theme == 'dark' ? 'dark-theme' : ''}">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <span>FraudGuard</span>
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="/admin/dashboard" class="nav-link">Dashboard</a>
+            <a href="/admin/users" class="nav-link">Users</a>
+            <a href="/admin/settings" class="nav-link">Settings</a>
+            <a href="/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div th:replace="${content}"></div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script>
+        // Session timeout configuration
+        const SESSION_TIMEOUT = 2 * 60 * 1000; // 2 minutes in milliseconds
+        let timeoutTimer;
+
+        // Function to reset the timer
+        function resetTimer() {
+            clearTimeout(timeoutTimer);
+            timeoutTimer = setTimeout(logout, SESSION_TIMEOUT);
+        }
+
+        // Function to handle logout
+        function logout() {
+            window.location.href = '/logout';
+        }
+
+        // Event listeners for user activity
+        document.addEventListener('mousemove', resetTimer);
+        document.addEventListener('keydown', resetTimer);
+        document.addEventListener('click', resetTimer);
+        document.addEventListener('scroll', resetTimer);
+
+        // Initialize the timer
+        resetTimer();
+    </script>
+</body>
+</html> 

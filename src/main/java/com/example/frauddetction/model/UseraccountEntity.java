@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,9 +36,26 @@ public class UseraccountEntity implements UserDetails {
     @Column(name = "account_status")
     private String accountStatus = "ACTIVE"; 
 
+    @Column(name = "last_login", nullable = true)
+    @Temporal(TemporalType.TIMESTAMP)
+    private LocalDateTime lastLogin;
+
+    @Column(name = "created_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private LocalDateTime createdAt;
+
+    @Column(name = "last_updated")
+    @Temporal(TemporalType.TIMESTAMP)
+    private LocalDateTime lastUpdated;
+
+    @Transient
+    private String csrfToken;
+
     public UseraccountEntity() {
         // Set default role to USER
         this.role = "USER";
+        this.createdAt = LocalDateTime.now();
+        this.lastUpdated = LocalDateTime.now();
     }
 
     public UseraccountEntity(String username, String email, String phoneNumber, String password, String role) {
@@ -95,7 +113,8 @@ public class UseraccountEntity implements UserDetails {
     }
 
     public void setRole(String role) {
-        this.role = role;
+        // Remove ROLE_ prefix if present to avoid double prefixing
+        this.role = role.startsWith("ROLE_") ? role.substring(5) : role;
     }
 
     public String getAccountStatus() {
@@ -114,18 +133,46 @@ public class UseraccountEntity implements UserDetails {
         return "WHITELISTED".equals(accountStatus);
     }
 
+    public LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public String getCsrfToken() {
+        return csrfToken;
+    }
+
+    public void setCsrfToken(String csrfToken) {
+        this.csrfToken = csrfToken;
+    }
+
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
         if (role != null && !role.isEmpty()) {
-            // Remove ROLE_ prefix if it exists
+            // Always add ROLE_ prefix if not present
             String normalizedRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-            authorities.add(new SimpleGrantedAuthority(normalizedRole.toUpperCase()));
-        }
-        // Add default user role if no role is set
-        if (authorities.isEmpty()) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+            authorities.add(new SimpleGrantedAuthority(normalizedRole));
         }
         return authorities;
     }

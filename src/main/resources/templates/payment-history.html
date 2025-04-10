@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History - Fraud Detection System</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .back-link:hover {
+            background-color: #2980b9;
+        }
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .transaction-table th,
+        .transaction-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .transaction-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .transaction-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-flagged {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .status-completed {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .amount-sent {
+            color: #e74c3c;
+        }
+        .amount-received {
+            color: #2ecc71;
+        }
+        .user-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .user-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+        .user-info strong {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment History</h1>
+            <a href="/profile" class="back-link">Back to Profile</a>
+        </div>
+
+        <div class="user-info">
+            <p><strong>Username:</strong> <span th:text="${username}">Username</span></p>
+            <p><strong>Phone Number:</strong> <span th:text="${phoneNumber}">Phone Number</span></p>
+        </div>
+
+        <table class="transaction-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Recipient/Sender</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="transaction : ${transactions}">
+                    <td th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm')}">Date</td>
+                    <td th:text="${transaction.senderPhoneNumber == phoneNumber ? 'SENT' : 'RECEIVED'}">Type</td>
+                    <td th:class="${transaction.senderPhoneNumber == phoneNumber ? 'amount-sent' : 'amount-received'}"
+                        th:text="${transaction.senderPhoneNumber == phoneNumber ? '-' : ''} + ${#numbers.formatDecimal(transaction.amount, 1, 2)}">Amount</td>
+                    <td th:class="${transaction.transactionType.contains('FLAGGED') ? 'status-flagged' : 'status-completed'}"
+                        th:text="${transaction.transactionType.contains('FLAGGED') ? 'FLAGGED' : 'COMPLETED'}">Status</td>
+                    <td th:text="${transaction.senderPhoneNumber == phoneNumber ? transaction.recipientPhoneNumber : transaction.senderPhoneNumber}">Party</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html> 

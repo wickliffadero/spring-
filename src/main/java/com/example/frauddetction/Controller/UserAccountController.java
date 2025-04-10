@@ -3,6 +3,9 @@ package com.example.frauddetction.Controller;
 import com.example.frauddetction.Repository.UserAccountRepository;
 import com.example.frauddetction.model.UseraccountEntity;
 import com.example.frauddetction.service.UserRoleService;
+import com.example.frauddetction.util.PhoneNumberFormatter;
+import com.example.frauddetction.service.ActivityService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +19,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
+@RequestMapping("/user")
 public class UserAccountController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserAccountController.class);
@@ -28,6 +33,26 @@ public class UserAccountController {
 
     @Autowired
     private UserRoleService userRoleService;
+
+    @Autowired
+    private ActivityService activityService;
+
+    @PostConstruct
+    public void init() {
+        // Create admin user if it doesn't exist
+        UseraccountEntity existingAdmin = userAccountRepository.findByUsername("admin");
+        if (existingAdmin == null) {
+            UseraccountEntity adminUser = new UseraccountEntity();
+            adminUser.setUsername("admin");
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setEmail("admin@system.com");
+            adminUser.setPhoneNumber("0700000000");
+            adminUser.setRole("ADMIN");
+            adminUser.setAccountStatus("ACTIVE");
+            userAccountRepository.save(adminUser);
+            logger.info("Admin user created successfully");
+        }
+    }
 
     @GetMapping("/createaccount")
     public String showCreateAccountForm(Model model, HttpServletRequest request) {
@@ -42,36 +67,28 @@ public class UserAccountController {
         return "createaccount";
     }
 
-    @PostMapping("/createaccount")
-    public String createAccount(@ModelAttribute UseraccountEntity useraccountEntity,
-                                @RequestParam("confirmPassword") String confirmPassword,
-                                Model model,
-                                HttpServletRequest request) {
-
+    @PostMapping("/create")
+    public String createAccount(@ModelAttribute("user") UseraccountEntity user,
+                              @RequestParam("confirmPassword") String confirmPassword,
+                              Model model,
+                              HttpServletRequest request) {
         logger.debug("POST /createaccount - Received request.");
-        logger.debug("POST /createaccount - Username={}, Email={}", useraccountEntity.getUsername(), useraccountEntity.getEmail());
-        logger.debug("POST /createaccount - Password={}, Confirm Password={}", useraccountEntity.getPassword(), confirmPassword);
+        logger.debug("POST /createaccount - Username={}, Email={}", user.getUsername(), user.getEmail());
+        logger.debug("POST /createaccount - Password={}, Confirm Password={}", user.getPassword(), confirmPassword);
         logger.debug("POST /createaccount - CSRF Token from request parameter: {}", request.getParameter("_csrf"));
 
-        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-        if (csrfToken != null) {
-            logger.debug("POST /createaccount - CSRF Token in HttpServletRequest attributes: Parameter Name={}, Token={}", csrfToken.getParameterName(), csrfToken.getToken());
-        } else {
-            logger.warn("POST /createaccount - CSRF Token NOT found in HttpServletRequest attributes on POST request.");
-        }
-
         // 1. Password Confirmation Check
-        if (!useraccountEntity.getPassword().equals(confirmPassword)) {
+        if (!user.getPassword().equals(confirmPassword)) {
             model.addAttribute("error", "Passwords do not match.");
             CsrfToken csrfTokenForError = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
             if (csrfTokenForError != null) {
                 model.addAttribute("_csrf", csrfTokenForError);
             }
-            return "createaccount"; // Return to the form with an error message
+            return "createaccount";
         }
 
         // 2. Check if username already exists
-        if (userAccountRepository.findByUsername(useraccountEntity.getUsername()) != null) {
+        if (userAccountRepository.findByUsername(user.getUsername()) != null) {
             model.addAttribute("error", "Username already exists.");
             CsrfToken csrfTokenForError = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
             if (csrfTokenForError != null) {
@@ -80,72 +97,113 @@ public class UserAccountController {
             return "createaccount";
         }
 
-        // Display the form data to the console
-        System.out.println("--- Form Data ---");
-        System.out.println("Username: " + useraccountEntity.getUsername());
-        System.out.println("Email: " + useraccountEntity.getEmail());
-        System.out.println("Phone Number (Before Processing): " + useraccountEntity.getPhoneNumber());
-        System.out.println("Password: " + useraccountEntity.getPassword());
-        System.out.println("Confirm Password (from @RequestParam): " + confirmPassword);
-        System.out.println("CSRF Parameter Name (from request): " + request.getParameter("_csrf"));
-        System.out.println("------------------");
-
-        // 3. Normalize the phone number to start with '7' and then validate
-        String phoneNumber = useraccountEntity.getPhoneNumber();
-        if (phoneNumber != null) {
-            // Remove any characters that are not digits
-            phoneNumber = phoneNumber.replaceAll("[^0-9]", "");
-
-            if (phoneNumber.startsWith("0")) {
-                phoneNumber = phoneNumber.substring(1);
-            } else if (phoneNumber.startsWith("2547")) {
-                phoneNumber = phoneNumber.substring(4);
-            } else if (phoneNumber.startsWith("254")) { // Corrected to handle +254
-                phoneNumber = phoneNumber.substring(4);
-            }
-
-            // --- PHONE NUMBER VALIDATION ---
-            if (phoneNumber.length() != 9 || !phoneNumber.matches("[0-9]+")) {
-                model.addAttribute("error", "Invalid phone number format. Please enter a 9-digit Kenyan phone number (e.g., 7XXXXXXXX).");
-                CsrfToken csrfTokenForError = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-                if (csrfTokenForError != null) {
-                    model.addAttribute("_csrf", csrfTokenForError);
-                }
-                return "createaccount"; // Return to the form with an error message
-            }
-
-            useraccountEntity.setPhoneNumber(phoneNumber);
-            System.out.println("Phone Number (After Normalization and Validation): " + useraccountEntity.getPhoneNumber());
-        } else {
-            System.out.println("Phone Number is null.");
-            model.addAttribute("error", "Phone number cannot be empty.");
+        // Format phone number
+        String formattedPhoneNumber = PhoneNumberFormatter.formatPhoneNumber(user.getPhoneNumber());
+        if (formattedPhoneNumber == null || formattedPhoneNumber.length() != 10) {
+            model.addAttribute("error", "Invalid phone number format. Please enter a valid Kenyan phone number.");
             CsrfToken csrfTokenForError = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
             if (csrfTokenForError != null) {
                 model.addAttribute("_csrf", csrfTokenForError);
             }
-            return "createaccount"; // Return to the form with an error message
+            return "createaccount";
         }
 
-        // 4. Hash the password before saving
-        String hashedPassword = passwordEncoder.encode(useraccountEntity.getPassword());
-        useraccountEntity.setPassword(hashedPassword);
+        // Set formatted phone number
+        user.setPhoneNumber(formattedPhoneNumber);
 
-        // 5. Set default role to USER
-        useraccountEntity.setRole("USER");
+        // 3. Hash the password before saving
+        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
 
-        // 6. Set default account status to active
-        useraccountEntity.setAccountStatus("ACTIVE");
+        // 4. Set default role to USER
+        user.setRole("USER");
+        user.setAccountStatus("ACTIVE");
 
-        // 7. Save the account to the database
-        userAccountRepository.save(useraccountEntity);
+        // Save the user
+        userAccountRepository.save(user);
+        
+        // Log the activity
+        activityService.logUserRegistration(user);
+        
+        model.addAttribute("success", "Account created successfully!");
+        return "redirect:/login";
+    }
 
-        // 8. If this is the first user, make them an admin
-        if (userAccountRepository.count() == 1) {
-            userRoleService.makeUserAdmin(useraccountEntity.getUsername());
+    @GetMapping("/check-admin")
+    public String checkAdmin(Model model) {
+        UseraccountEntity adminUser = userAccountRepository.findByUsername("admin");
+        if (adminUser != null) {
+            model.addAttribute("message", 
+                "Admin exists - Username: " + adminUser.getUsername() + 
+                ", Role: " + adminUser.getRole() + 
+                ", Status: " + adminUser.getAccountStatus());
+        } else {
+            model.addAttribute("message", "No admin user found");
         }
+        return "admin-check";
+    }
 
-        // 9. Redirect or show a success message
-        model.addAttribute("message", "Account created successfully!");
-        return "login";
+    @GetMapping("/create-admin")
+    public String createAdmin(Model model) {
+        // Check if admin exists
+        UseraccountEntity existingAdmin = userAccountRepository.findByUsername("admin");
+        if (existingAdmin != null) {
+            // Update existing admin's role and password
+            existingAdmin.setRole("ADMIN");  // Will be prefixed with ROLE_ in getAuthorities()
+            existingAdmin.setPassword(passwordEncoder.encode("admin123"));
+            userAccountRepository.save(existingAdmin);
+            model.addAttribute("message", "Admin account updated successfully");
+        } else {
+            // Create new admin
+            UseraccountEntity adminUser = new UseraccountEntity();
+            adminUser.setUsername("admin");
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setEmail("admin@system.com");
+            adminUser.setPhoneNumber("0700000000");
+            adminUser.setRole("ADMIN");  // Will be prefixed with ROLE_ in getAuthorities()
+            adminUser.setAccountStatus("ACTIVE");
+            userAccountRepository.save(adminUser);
+            model.addAttribute("message", "Admin account created successfully");
+        }
+        return "admin-check";
+    }
+
+    @PostMapping("/blacklist")
+    public String blacklistUser(@RequestParam("phoneNumber") String phoneNumber) {
+        UseraccountEntity user = userAccountRepository.findByPhoneNumber(phoneNumber);
+        if (user != null) {
+            user.setAccountStatus("BLACKLISTED");
+            userAccountRepository.save(user);
+            
+            // Log the activity
+            activityService.logUserBlacklist(user);
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/whitelist")
+    public String whitelistUser(@RequestParam("phoneNumber") String phoneNumber) {
+        UseraccountEntity user = userAccountRepository.findByPhoneNumber(phoneNumber);
+        if (user != null) {
+            user.setAccountStatus("WHITELISTED");
+            userAccountRepository.save(user);
+            
+            // Log the activity
+            activityService.logUserWhitelist(user);
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/activate")
+    public String activateUser(@RequestParam("phoneNumber") String phoneNumber) {
+        UseraccountEntity user = userAccountRepository.findByPhoneNumber(phoneNumber);
+        if (user != null) {
+            user.setAccountStatus("ACTIVE");
+            userAccountRepository.save(user);
+            
+            // Log the activity
+            activityService.logUserActivation(user);
+        }
+        return "redirect:/admin/users";
     }
 }

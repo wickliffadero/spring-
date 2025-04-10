@@ -1,219 +1,523 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - Fraud Detection System</title>
+    <title>User Dashboard - FraudGuard</title>
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-            max-width: 900px; /* Increased max-width */
-            margin: 20px auto; /* Center the container */
-        }
-        header {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        header h1 {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .dashboard-content {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .dashboard-content p {
-            font-size: 1.1em;
-            color: #555;
-            line-height: 1.6;
-        }
-        .logout-form {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-        .logout-form button {
-            background-color: #dc3545; /* Red for logout */
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-        .logout-form button:hover {
-            background-color: #c82333;
-        }
-        nav {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            border: 1px solid #eee;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
             display: flex;
-            gap: 20px;
-            justify-content: center;
         }
-        nav ul li a {
-            color: #007bff;
-            text-decoration: none;
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
             font-weight: bold;
-            font-size: 1em;
-            transition: color 0.3s ease;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        nav ul li a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-        footer {
-            text-align: center;
-            color: #999;
-            font-size: 0.9em;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-        .transaction-history, .flagged-transactions {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .transaction-list, .flagged-transaction-list {
+
+        .nav-menu {
             list-style: none;
-            padding: 0;
         }
-        .transaction-item, .flagged-transaction-item {
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            color: var(--dark-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: var(--light-color);
+            color: var(--primary-color);
+        }
+
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .nav-icon {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 2rem;
         }
-        .transaction-item:last-child, .flagged-transaction-item:last-child {
-            border-bottom: none;
+
+        .welcome-message h1 {
+            font-size: 1.8rem;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
         }
-        .transaction-details, .flagged-transaction-details {
-            flex-grow: 1;
+
+        .welcome-message p {
+            color: #666;
         }
-        .transaction-details p, .flagged-transaction-details p {
-            margin: 5px 0;
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
-        .flagged {
-            color: #ff9800; /* Orange for flagged */
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
         }
-        .failed {
-            color: #dc3545; /* Red for failed */
-            font-weight: bold;
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
-        .success {
-            color: #28a745; /* Green for success */
-            font-weight: bold;
+
+        .stat-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .status-message {
-            font-size: 0.9em;
-            color: #777;
-            margin-top: 5px;
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .stat-icon.primary {
+            background-color: var(--primary-color);
+        }
+
+        .stat-icon.success {
+            background-color: var(--secondary-color);
+        }
+
+        .stat-icon.warning {
+            background-color: var(--warning-color);
+        }
+
+        .stat-icon.danger {
+            background-color: var(--danger-color);
+        }
+
+        /* Recent Transactions */
+        .recent-transactions {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: var(--dark-color);
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction-table th {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .status-warning {
+            background-color: rgba(241, 196, 15, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+        }
+
+        /* Alerts Section */
+        .alerts-section {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .alert-card {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background-color: var(--light-color);
+        }
+
+        .alert-icon {
+            margin-right: 1rem;
+            color: var(--warning-color);
+        }
+
+        .alert-content h4 {
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+            color: var(--dark-color);
+        }
+
+        .alert-content p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Font Awesome Icons */
+        .fas, .fab {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+        }
+
+        .fa-shield-alt:before {
+            content: "\f3ed";
+        }
+
+        .fa-chart-line:before {
+            content: "\f201";
+        }
+
+        .fa-history:before {
+            content: "\f1da";
+        }
+
+        .fa-user:before {
+            content: "\f007";
+        }
+
+        .fa-exclamation-triangle:before {
+            content: "\f071";
+        }
+
+        .fa-sign-out-alt:before {
+            content: "\f2f5";
+        }
+
+        .fa-bell:before {
+            content: "\f0f3";
+        }
+
+        .fa-check-circle:before {
+            content: "\f058";
+        }
+
+        .fa-exclamation-circle:before {
+            content: "\f06a";
+        }
+
+        .fa-times-circle:before {
+            content: "\f057";
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                padding: 1rem 0;
+            }
+
+            .sidebar-header {
+                padding: 0 0.5rem;
+            }
+
+            .sidebar-logo span {
+                display: none;
+            }
+
+            .nav-link span {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
+
+            .user-info span {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <header>
-        <h1>Welcome to your Dashboard, <span sec:authentication="name"></span>!</h1>
-    </header>
-
-    <div class="dashboard-content">
-        <p>This is your secure dashboard area for the online payment fraud detection system.</p>
-        <p>Your phone number: <span th:text="${phoneNumber}"></span></p>
-        <p>From here, you can monitor your transaction history and any flagged transactions.</p>
-    </div>
-
-    <div class="logout-form">
-        <form th:action="@{/logout}" method="post">
-            <button type="submit">Logout</button>
-        </form>
-    </div>
-
-    <nav>
-        <ul>
-<!--            <li><a href="/dashboard">Dashboard</a></li>-->
-<!--            <li><a href="/profile">Profile</a></li>-->
-<!--            <li><a href="/payment-history">Payment History</a></li>-->
-<!--            <li><a href="/report-issue">Report Issue</a></li>-->
-        </ul>
-    </nav>
-
-    <div class="transaction-history">
-        <h2>Transaction History</h2>
-        <div th:if="${#lists.isEmpty(transactions)}">
-            <p>No transaction history found for your account.</p>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="sidebar-logo">
+                <i class="fas fa-shield-alt"></i>
+                <span>FraudGuard</span>
+            </a>
         </div>
-        <ul class="transaction-list" th:unless="${#lists.isEmpty(transactions)}">
-            <li class="transaction-item" th:each="transaction : ${transactions}">
-                <div class="transaction-details">
-                    <p><strong>Date:</strong> <span th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
-                    <p><strong>Type:</strong>
-                        <span th:if="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Sent to: ' + ${transaction.recipientPhoneNumber}"></span>
-                        <span th:unless="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Received from: ' + ${transaction.senderPhoneNumber}"></span>
-                    </p>
-                    <p><strong>Amount:</strong> <span th:text="${transaction.amount}"></span></p>
-                    <p><strong>Status:</strong>
-                        <span class="success" th:if="${#strings.contains(transaction.transactionType, 'SUCCESSFUL')}">Successful</span>
-                        <span class="failed" th:if="${#strings.contains(transaction.transactionType, 'FAILED') or #strings.contains(transaction.transactionType, 'CANCELLED') or #strings.contains(transaction.transactionType, 'BLOCKED')}">Failed</span>
-                        <span class="flagged" th:if="${#strings.contains(transaction.transactionType, 'FLAGGED')}">Flagged</span>
-                    </p>
-                    <p class="status-message" th:if="${transaction.transactionStatusMessage}" th:text="${transaction.transactionStatusMessage}"></p>
-                </div>
-            </li>
-        </ul>
-    </div>
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">
+                        <i class="fas fa-chart-line nav-icon"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-history nav-icon"></i>
+                        <span>Payment History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-user nav-icon"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-exclamation-triangle nav-icon"></i>
+                        <span>Report Issue</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/logout" class="nav-link">
+                        <i class="fas fa-sign-out-alt nav-icon"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
 
-    <div class="flagged-transactions">
-        <h2>Flagged Transactions</h2>
-        <div th:if="${#lists.isEmpty(flaggedTransactions)}">
-            <p>No flagged transactions found for your account.</p>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <div class="welcome-message">
+                <h1>Welcome back, <span th:text="${username}">User</span>!</h1>
+                <p>Here's what's happening with your account today</p>
+            </div>
+            <div class="user-info">
+                <span th:text="${username}">Username</span>
+                <div class="user-avatar" th:text="${#strings.substring(username, 0, 2)}">JD</div>
+            </div>
         </div>
-        <ul class="flagged-transaction-list" th:unless="${#lists.isEmpty(flaggedTransactions)}">
-            <li class="flagged-transaction-item" th:each="transaction : ${flaggedTransactions}">
-                <div class="flagged-transaction-details">
-                    <p><strong>Date:</strong> <span th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
-                    <p><strong>Type:</strong>
-                        <span th:if="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Sent to: ' + ${transaction.recipientPhoneNumber}"></span>
-                        <span th:unless="${transaction.senderPhoneNumber == phoneNumber}" th:text="'Received from: ' + ${transaction.senderPhoneNumber}"></span>
-                    </p>
-                    <p><strong>Amount:</strong> <span th:text="${transaction.amount}"></span></p>
-                    <p class="flagged"><strong>Reason:</strong> <span th:text="${transaction.transactionStatusMessage}"></span></p>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Total Transactions</div>
+                    <div class="stat-icon primary">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
                 </div>
-            </li>
-        </ul>
-    </div>
+                <div class="stat-value" th:text="${totalTransactions}">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Successful Transactions</div>
+                    <div class="stat-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-value" th:text="${successfulTransactions}">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Blocked Transactions</div>
+                    <div class="stat-icon danger">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-value" th:text="${blockedTransactions}">0</div>
+            </div>
+        </div>
 
-    <footer>
-        <p>&copy; 2025 Fraud Detection System</p>
+        <!-- Recent Transactions -->
+        <div class="recent-transactions">
+            <div class="section-header">
+                <h2 class="section-title">Recent Transactions</h2>
+                <a href="#" class="btn btn-primary">View All</a>
+            </div>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Recipient</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="transaction : ${recentTransactions}">
+                        <td th:text="${transaction?.transactionDate != null ? #temporals.format(transaction.transactionDate, 'MMM dd, yyyy') : 'N/A'}">N/A</td>
+                        <td th:text="${transaction?.recipientPhoneNumber ?: 'N/A'}">N/A</td>
+                        <td th:text="${transaction?.amount != null ? #numbers.formatCurrency(transaction.amount) : 'N/A'}">N/A</td>
+                        <td>
+                            <span class="status-badge" 
+                                  th:classappend="${transaction?.transactionType == 'FLAGGED' ? 'status-warning' : 
+                                                (transaction?.transactionType == 'BLOCKED' ? 'status-danger' : 'status-success')}"
+                                  th:text="${transaction?.transactionType == 'FLAGGED' ? 'Under Review' : 
+                                          (transaction?.transactionType == 'BLOCKED' ? 'Blocked' : 'Completed')}">
+                                Status
+                            </span>
+                        </td>
+                        <td th:text="${transaction?.transactionStatusMessage ?: 'N/A'}">N/A</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    </footer>
-</div>
+        <!-- Alerts Section -->
+        <div class="alerts-section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Alerts</h2>
+            </div>
+            <div class="alert-card">
+                <i class="fas fa-bell alert-icon"></i>
+                <div class="alert-content">
+                    <h4>Suspicious Activity Detected</h4>
+                    <p>A transaction of $500.00 was flagged for review</p>
+                </div>
+            </div>
+            <div class="alert-card">
+                <i class="fas fa-bell alert-icon"></i>
+                <div class="alert-content">
+                    <h4>Security Update</h4>
+                    <p>Your account security settings have been updated</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auto-refresh dashboard every 5 minutes
+        setInterval(() => {
+            window.location.reload();
+        }, 300000);
+
+        // Add smooth transitions for sidebar items
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                document.querySelector('.nav-link.active').classList.remove('active');
+                this.classList.add('active');
+            });
+        });
+    </script>
 </body>
 </html>

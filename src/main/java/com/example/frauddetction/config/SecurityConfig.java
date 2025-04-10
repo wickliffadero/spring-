@@ -34,11 +34,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/ussd/**", "/ussd", "/api/transactions/**")
+            )
             .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/dashboard/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/ussd/**").permitAll()
-                .requestMatchers("/", "/register", "/css/**", "/js/**", "/login").permitAll()
+                .requestMatchers("/dashboard/**").hasRole("USER")
+                .requestMatchers("/ussd/**", "/ussd").permitAll()
+                .requestMatchers("/api/transactions/**").permitAll()
+                .requestMatchers("/", "/register", "/css/**", "/js/**", "/login", "/createaccount", "/check-admin").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form
@@ -48,19 +52,47 @@ public class SecurityConfig {
                     public void onAuthenticationSuccess(HttpServletRequest request, 
                             HttpServletResponse response, Authentication authentication) 
                             throws IOException, ServletException {
-                        if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-                            response.sendRedirect("/admin/dashboard");
-                        } else {
-                            response.sendRedirect("/dashboard");
+                        String loginType = request.getParameter("loginType");
+                        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                        
+                        // For admin login attempts
+                        if ("admin".equals(loginType)) {
+                            if (isAdmin) {
+                                response.sendRedirect("/admin/dashboard");
+                            } else {
+                                // If not an admin, logout and redirect to login with error
+                                request.getSession().invalidate();
+                                response.sendRedirect("/login?error=notadmin");
+                            }
+                        } 
+                        // For user login attempts
+                        else {
+                            if (isAdmin) {
+                                // If admin trying to log in as user, redirect with error
+                                request.getSession().invalidate();
+                                response.sendRedirect("/login?error=adminasuser");
+                            } else {
+                                response.sendRedirect("/dashboard");
+                            }
                         }
                     }
                 })
                 .permitAll()
                 .failureHandler((request, response, exception) -> {
                     String username = request.getParameter("username");
+                    String loginType = request.getParameter("loginType");
                     UseraccountEntity user = userAccountRepository.findByUsername(username);
-                    if (user != null && "BLACKLISTED".equals(user.getAccountStatus())) {
-                        response.sendRedirect("/login?blacklisted");
+                    
+                    if (user != null) {
+                        if ("BLACKLISTED".equals(user.getAccountStatus())) {
+                            response.sendRedirect("/login?blacklisted");
+                        } else if ("admin".equals(loginType) && !"ADMIN".equals(user.getRole())) {
+                            response.sendRedirect("/login?error=notadmin");
+                        } else if ("user".equals(loginType) && "ADMIN".equals(user.getRole())) {
+                            response.sendRedirect("/login?error=adminasuser");
+                        } else {
+                            response.sendRedirect("/login?error");
+                        }
                     } else {
                         response.sendRedirect("/login?error");
                     }
