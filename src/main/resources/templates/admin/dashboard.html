@@ -1,224 +1,632 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Admin Dashboard - Fraud Detection System</title>
+    <title>Admin Dashboard - FraudGuard</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .admin-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
         }
-        .stat-card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
         }
-        .stat-card h3 {
+
+        .dashboard-title {
+            font-size: 2rem;
+            color: #2c3e50;
             margin: 0;
-            color: #666;
-            font-size: 1em;
         }
-        .stat-card .value {
-            font-size: 2em;
+
+        .logout-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .stat-card.total-users::before {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+        }
+
+        .stat-card.active-users::before {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+        }
+
+        .stat-card.blacklisted::before {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .stat-card.whitelisted::before {
+            background: linear-gradient(90deg, #f1c40f, #f39c12);
+        }
+
+        .stat-title {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
             font-weight: bold;
             color: #2c3e50;
-            margin: 10px 0;
+            margin-bottom: 0.5rem;
         }
-        .admin-actions {
-            margin-bottom: 30px;
+
+        .stat-icon {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            opacity: 0.2;
         }
-        .action-buttons {
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .action-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
             display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .action-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
+
+        .action-btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
             text-decoration: none;
+            color: white;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
             text-align: center;
-            transition: background-color 0.3s;
-            min-width: 150px;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .view-all {
-            background-color: #3498db;
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .manage-users {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .view-reports {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .system-settings {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .add-ussd {
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+        }
+
+        .coming-soon {
+            position: relative;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .coming-soon::after {
+            content: 'Coming Soon';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
         }
-        .view-flagged {
-            background-color: #f39c12;
+
+        .recent-activity {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .activity-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f1f1f1;
+        }
+
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .activity-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
+            font-size: 1.2rem;
         }
-        .view-users {
-            background-color: #2ecc71;
-            color: white;
+
+        .activity-details {
+            flex: 1;
         }
-        .whitelist {
-            background-color: #27ae60;
-            color: white;
+
+        .activity-text {
+            margin: 0;
+            color: #2c3e50;
         }
-        .blacklist {
-            background-color: #c0392b;
-            color: white;
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.2rem;
         }
-        .recent-transactions {
-            margin-top: 30px;
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
         }
-        .transaction-table {
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .transaction-table th, .transaction-table td {
-            padding: 12px;
+        
+        th, td {
+            padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
-        .transaction-table th {
+        
+        th {
             background-color: #f8f9fa;
-            font-weight: bold;
-            color: #2c3e50;
+            font-weight: 600;
+            color: #495057;
         }
-        .status-flagged {
-            color: #f39c12;
-            font-weight: bold;
+        
+        tr:hover {
+            background-color: #f8f9fa;
         }
-        .status-blocked {
-            color: #e74c3c;
-            font-weight: bold;
+        
+        .status-active {
+            color: #28a745;
+            font-weight: 500;
         }
-        .status-success {
-            color: #2ecc71;
-            font-weight: bold;
+        
+        .status-inactive {
+            color: #dc3545;
+            font-weight: 500;
         }
-        .user-actions {
+
+        .topup-form {
             display: flex;
-            gap: 5px;
+            gap: 8px;
+            align-items: center;
         }
-        .user-actions button {
-            padding: 4px 8px;
+        
+        .topup-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .currency-symbol {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .topup-form input[type="number"] {
+            width: 120px;
+            padding: 6px 8px 6px 24px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .topup-info {
+            font-size: 12px;
+            color: #dc3545;
+            margin-top: 4px;
+        }
+        
+        .btn-topup {
+            background-color: #28a745;
+            color: white;
             border: none;
-            border-radius: 3px;
+            padding: 6px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 0.9em;
-            transition: opacity 0.3s;
+            font-size: 14px;
+            transition: background-color 0.2s;
         }
-        .user-actions button:hover {
-            opacity: 0.9;
+        
+        .btn-topup:hover:not(:disabled) {
+            background-color: #218838;
         }
+        
+        .btn-topup:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .topup-ussd {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        
+        .topup-ussd:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        /* Add styles for alert messages */
         .alert {
             padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
             border-radius: 4px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .alert-success {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-        .alert-error {
-            color: #721c24;
+
+        .alert-danger {
             background-color: #f8d7da;
-            border-color: #f5c6cb;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert i {
+            font-size: 1.2em;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Admin Dashboard</h1>
-            <div class="logout-form">
-                <form th:action="@{/logout}" method="post">
-                    <button type="submit">Logout</button>
+    <div class="container-fluid">
+        <!-- Success Message Alert -->
+        <div th:if="${success != null and not #strings.isEmpty(success)}" 
+             class="alert alert-success alert-dismissible fade show" 
+             role="alert"
+             style="position: fixed; top: 20px; right: 20px; z-index: 1000; min-width: 300px;">
+            <span th:text="${success}">Success message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Error Message Alert -->
+        <div th:if="${error != null and not #strings.isEmpty(error)}" 
+             class="alert alert-danger alert-dismissible fade show" 
+             role="alert"
+             style="position: fixed; top: 20px; right: 20px; z-index: 1000; min-width: 300px;">
+            <span th:text="${error}">Error message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Admin Dashboard</h1>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </form>
             </div>
-        </header>
 
-        <!-- Success/Error Messages -->
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+            <div class="stats-grid">
+                <div class="stat-card total-users">
+                    <i class="fas fa-users stat-icon"></i>
+                    <div class="stat-title">Total Users</div>
+                    <div class="stat-value" th:text="${totalUsers}">0</div>
+                </div>
+                <div class="stat-card active-users">
+                    <i class="fas fa-user-check stat-icon"></i>
+                    <div class="stat-title">Active Users</div>
+                    <div class="stat-value" th:text="${activeUsers}">0</div>
+                </div>
+                <div class="stat-card blacklisted">
+                    <i class="fas fa-user-slash stat-icon"></i>
+                    <div class="stat-title">Blacklisted Users</div>
+                    <div class="stat-value" th:text="${blacklistedUsers}">0</div>
+                </div>
+                <div class="stat-card whitelisted">
+                    <i class="fas fa-user-shield stat-icon"></i>
+                    <div class="stat-title">Whitelisted Users</div>
+                    <div class="stat-value" th:text="${whitelistedUsers}">0</div>
+                </div>
+            </div>
 
-        <div class="admin-stats">
-            <div class="stat-card">
-                <h3>Total Transactions</h3>
-                <div class="value" th:text="${totalTransactions}">0</div>
+            <div class="action-grid">
+                <div class="action-card">
+                    <h2 class="action-title">
+                        <i class="fas fa-users"></i> User Management
+                    </h2>
+                    <a href="/admin/users" class="action-btn manage-users">
+                        Manage Users
+                    </a>
+                </div>
+                <div class="action-card">
+                    <h2 class="action-title">
+                        <i class="fas fa-mobile-alt"></i> USSD Users
+                    </h2>
+                    <a href="/admin/users/add-ussd" class="action-btn add-ussd">
+                        Add USSD User
+                    </a>
+                </div>
+                <div class="action-card">
+                    <h2 class="action-title">
+                        <i class="fas fa-money-bill-wave"></i> USSD Top Up
+                    </h2>
+                    <a href="#ussd-accounts" class="action-btn topup-ussd">
+                        Top Up Accounts
+                    </a>
+                </div>
+                <div class="action-card">
+                    <h2 class="action-title">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </h2>
+                    <a href="/admin/reports" class="action-btn view-reports coming-soon">
+                        View Reports
+                    </a>
+                </div>
+                <div class="action-card">
+                    <h2 class="action-title">
+                        <i class="fas fa-cog"></i> Settings
+                    </h2>
+                    <a href="/admin/settings" class="action-btn system-settings">
+                        System Settings
+                    </a>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>Flagged Transactions</h3>
-                <div class="value" th:text="${flaggedTransactions}">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Blocked Transactions</h3>
-                <div class="value" th:text="${blockedTransactions}">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Users</h3>
-                <div class="value" th:text="${totalUsers}">0</div>
+
+            <div class="recent-activity">
+                <h2 class="activity-title">Recent Activity</h2>
+                <ul class="activity-list">
+                    <li th:each="activity : ${recentActivities}" class="activity-item">
+                        <div class="activity-icon" th:style="${activity.activityType == 'REGISTRATION' ? 'background: #3498db;' : 
+                                                          activity.activityType == 'BLACKLIST' ? 'background: #e74c3c;' : 
+                                                          activity.activityType == 'WHITELIST' ? 'background: #2ecc71;' : 
+                                                          'background: #9b59b6;'}">
+                            <i th:class="${activity.activityType == 'REGISTRATION' ? 'fas fa-user-plus' : 
+                                        activity.activityType == 'BLACKLIST' ? 'fas fa-user-slash' : 
+                                        activity.activityType == 'WHITELIST' ? 'fas fa-user-shield' : 
+                                        'fas fa-cog'}"></i>
+                        </div>
+                        <div class="activity-details">
+                            <p class="activity-text" th:text="${activity.description}">Activity description</p>
+                            <span class="activity-time" th:text="${#temporals.format(activity.timestamp, 'MMM dd, yyyy HH:mm')}">Timestamp</span>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
 
-        <div class="admin-actions">
-            <h2>Quick Actions</h2>
-            <div class="action-buttons">
-                <a href="/admin/transactions" class="action-button view-all">View All Transactions</a>
-                <a href="/admin/flagged-transactions" class="action-button view-flagged">View Flagged Transactions</a>
-                <a href="/admin/users" class="action-button view-users">Manage Users</a>
-                <a href="/admin/whitelist" class="action-button whitelist">View Whitelisted Users</a>
-                <a href="/admin/blacklist" class="action-button blacklist">View Blacklisted Users</a>
+        <!-- USSD Accounts Section -->
+        <div class="dashboard-section" id="ussd-accounts">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>USSD Accounts</h2>
+                <a href="/admin/ussd/users" class="action-btn add-ussd" style="width: auto; padding: 0.5rem 1rem;">
+                    <i class="fas fa-list"></i> View All USSD Users
+                </a>
             </div>
-        </div>
-
-        <div class="recent-transactions">
-            <h2>Recent Transactions</h2>
-            <table class="transaction-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="transaction : ${recentTransactions}">
-                        <td th:text="${#temporals.format(transaction.transactionDate, 'yyyy-MM-dd HH:mm')}"></td>
-                        <td th:text="${transaction.senderPhoneNumber}"></td>
-                        <td th:text="${transaction.recipientPhoneNumber}"></td>
-                        <td th:text="${transaction.amount}"></td>
-                        <td>
-                            <span th:class="${
-                                #strings.contains(transaction.transactionType, 'FLAGGED') ? 'status-flagged' :
-                                #strings.contains(transaction.transactionType, 'BLOCKED') ? 'status-blocked' :
-                                'status-success'}"
-                                th:text="${transaction.transactionType}">
-                            </span>
-                        </td>
-                        <td class="user-actions">
-                            <form th:action="@{/admin/whitelist}" method="post" style="display: inline;">
-                                <input type="hidden" name="phoneNumber" th:value="${transaction.senderPhoneNumber}">
-                                <button type="submit" class="action-button whitelist">Whitelist</button>
-                            </form>
-                            <form th:action="@{/admin/blacklist}" method="post" style="display: inline;">
-                                <input type="hidden" name="phoneNumber" th:value="${transaction.senderPhoneNumber}">
-                                <button type="submit" class="action-button blacklist">Blacklist</button>
-                            </form>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phone Number</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Service Provider</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="account : ${ussdAccounts}">
+                            <td th:text="${account.phoneNumber}"></td>
+                            <td th:text="${account.firstName}"></td>
+                            <td th:text="${account.lastName}"></td>
+                            <td th:text="${account.serviceProvider}"></td>
+                            <td>$<span th:text="${#numbers.formatDecimal(account.balance, 0, 'POINT', 2, 'COMMA')}"></span></td>
+                            <td>
+                                <span th:class="${account.isActive ? 'status-active' : 'status-inactive'}"
+                                      th:text="${account.isActive ? 'Active' : 'Inactive'}">
+                                </span>
+                            </td>
+                            <td th:text="${#temporals.format(account.lastUpdated, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td>
+                                <form th:action="@{/admin/ussd/topup}" method="post" class="topup-form">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="phoneNumber" th:value="${account.phoneNumber}">
+                                    <div class="topup-input-group">
+                                        <span class="currency-symbol">$</span>
+                                        <input type="number" 
+                                               name="amount" 
+                                               min="0" 
+                                               max="5000" 
+                                               step="0.01" 
+                                               th:max="5000 - ${account.balance}"
+                                               th:placeholder="'Max: $' + ${5000 - account.balance}"
+                                               required
+                                               oninput="validateTopUpAmount(this)">
+                                        <button type="submit" 
+                                                class="btn-topup"
+                                                th:disabled="${account.balance >= 5000}">
+                                            Top Up
+                                        </button>
+                                    </div>
+                                    <div class="topup-info" th:if="${account.balance >= 5000}">
+                                        Maximum balance reached ($5,000)
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <script>
+        function validateTopUpAmount(input) {
+            const maxAmount = parseFloat(input.getAttribute('max'));
+            const currentValue = parseFloat(input.value);
+            
+            if (currentValue > maxAmount) {
+                input.value = maxAmount;
+            }
+            
+            // Format the input to show 2 decimal places
+            if (input.value) {
+                input.value = parseFloat(input.value).toFixed(2);
+            }
+        }
+
+        // Add form submission handler
+        document.querySelectorAll('.topup-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const amountInput = this.querySelector('input[name="amount"]');
+                const amount = parseFloat(amountInput.value);
+                
+                if (isNaN(amount) || amount <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid amount greater than 0');
+                    return;
+                }
+                
+                if (amount > 5000) {
+                    e.preventDefault();
+                    alert('Amount cannot exceed $5,000');
+                    return;
+                }
+            });
+        });
+
+        // Auto-dismiss success messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successAlert = document.querySelector('.alert-success');
+            if (successAlert) {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(successAlert);
+                    bsAlert.close();
+                }, 5000);
+            }
+        });
+    </script>
 </body>
 </html>

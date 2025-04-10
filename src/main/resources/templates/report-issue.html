@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Issue - Fraud Detection System</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            max-width: 900px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .back-link:hover {
+            background-color: #2980b9;
+        }
+        .coming-soon {
+            padding: 40px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .coming-soon h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .coming-soon p {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .contact-info {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f4f8;
+            border-radius: 8px;
+        }
+        .contact-info p {
+            margin: 10px 0;
+            color: #333;
+        }
+        .contact-info strong {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Report an Issue</h1>
+            <a href="/dashboard" class="back-link">Back to Dashboard</a>
+        </div>
+
+        <div class="coming-soon">
+            <h2>Coming Soon</h2>
+            <p>We're working on bringing you a comprehensive issue reporting system. This feature will allow you to:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li>Report suspicious transactions</li>
+                <li>Report technical issues</li>
+                <li>Submit feedback about the system</li>
+                <li>Track the status of your reports</li>
+            </ul>
+            <p>Please check back soon for updates!</p>
+        </div>
+
+        <div class="contact-info">
+            <h3>Need Immediate Assistance?</h3>
+            <p><strong>Email:</strong> support@frauddetection.com</p>
+            <p><strong>Phone:</strong> +254 700 000 000</p>
+            <p><strong>Hours:</strong> 24/7 Support Available</p>
+        </div>
+    </div>
+</body>
+</html> 

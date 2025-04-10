@@ -4,18 +4,39 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "transaction")
 public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "sender_phone_number")
     private String senderPhoneNumber;
+
+    @Column(name = "recipient_phone_number")
     private String recipientPhoneNumber;
+
+    @Column(name = "amount")
     private double amount;
+
+    @Column(name = "transaction_date")
     private LocalDateTime transactionDate;
+
+    @Column(name = "transaction_type")
     private String transactionType;
-    private String transactionStatusMessage; // Added field for status messages
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "is_suspicious")
+    private Boolean isSuspicious;
+
+    @Column(name = "fraud_score")
+    private Double fraudScore;
+
+    @Column(name = "transaction_status_message")
+    private String transactionStatusMessage;
 
     // Default constructor (required by JPA)
     public Transaction() {
@@ -79,14 +100,35 @@ public class Transaction {
         this.transactionType = transactionType;
     }
 
-    public String getTransactionStatusMessage() {
-        return transactionStatusMessage;
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Boolean isSuspicious() {
+        return isSuspicious;
+    }
+
+    public void setSuspicious(Boolean suspicious) {
+        isSuspicious = suspicious;
+    }
+
+    public Double getFraudScore() {
+        return fraudScore;
+    }
+
+    public void setFraudScore(Double fraudScore) {
+        this.fraudScore = fraudScore;
     }
 
     public void setTransactionStatusMessage(String transactionStatusMessage) {
         this.transactionStatusMessage = transactionStatusMessage;
     }
 
-    public void setStatusMessage(String success) {
+    public String getTransactionStatusMessage() {
+        return transactionStatusMessage;
     }
 }

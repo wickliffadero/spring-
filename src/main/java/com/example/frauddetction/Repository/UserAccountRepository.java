@@ -12,4 +12,14 @@ public interface UserAccountRepository extends JpaRepository<UseraccountEntity, 
     UseraccountEntity findByPhoneNumber(String phoneNumber);
     List<UseraccountEntity> findByAccountStatus(String accountStatus);
     boolean existsByUsername(String username);
+    boolean existsByPhoneNumber(String phoneNumber);
+    long countByRole(String role);
+    
+    // Add search method for username or phone number
+    List<UseraccountEntity> findByUsernameContainingOrPhoneNumberContaining(String username, String phoneNumber);
+    
+    // Count users by account status
+    long countByAccountStatus(String accountStatus);
+    
+    // Find users by role
 }

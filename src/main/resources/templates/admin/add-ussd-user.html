@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add USSD User - FraudGuard</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-subtitle {
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <div class="form-header">
+                <h1 class="form-title">Add USSD User</h1>
+                <p class="form-subtitle">Create a new USSD user account</p>
+            </div>
+
+            <!-- Alert messages -->
+            <div th:if="${error != null and not #strings.isEmpty(error)}" 
+                 class="alert alert-danger" 
+                 th:text="${error}">
+                Error message
+            </div>
+            <div th:if="${success != null and not #strings.isEmpty(success)}" 
+                 class="alert alert-success" 
+                 th:text="${success}">
+                Success message
+            </div>
+
+            <form th:action="@{/admin/users/add-ussd}" method="post" th:object="${ussdUser}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                
+                <div class="form-group">
+                    <label class="form-label" for="phoneNumber">Phone Number</label>
+                    <input type="text" 
+                           class="form-input" 
+                           id="phoneNumber" 
+                           th:field="*{phoneNumber}" 
+                           placeholder="07XXXXXXXX"
+                           required>
+                    <small class="text-muted">Enter a valid Kenyan phone number starting with 07</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="pin">PIN</label>
+                    <input type="password" 
+                           class="form-input" 
+                           id="pin" 
+                           th:field="*{pin}" 
+                           placeholder="Enter 4-digit PIN"
+                           maxlength="4"
+                           required>
+                    <small class="text-muted">Enter a 4-digit PIN</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="firstName">First Name</label>
+                    <input type="text" 
+                           class="form-input" 
+                           id="firstName" 
+                           th:field="*{firstName}" 
+                           placeholder="Enter first name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="lastName">Last Name</label>
+                    <input type="text" 
+                           class="form-input" 
+                           id="lastName" 
+                           th:field="*{lastName}" 
+                           placeholder="Enter last name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="serviceProvider">Service Provider</label>
+                    <select class="form-select" 
+                            id="serviceProvider" 
+                            th:field="*{serviceProvider}">
+                        <option value="Safaricom">Safaricom</option>
+                        <option value="Airtel">Airtel</option>
+                        <option value="Telkom">Telkom</option>
+                    </select>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                    <a href="/admin/dashboard" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Show alert messages for 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                if (alert.textContent.trim() !== '') {
+                    alert.style.display = 'block';
+                    setTimeout(() => {
+                        alert.style.display = 'none';
+                    }, 5000);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

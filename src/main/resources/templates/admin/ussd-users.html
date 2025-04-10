@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>USSD Users - FraudGuard</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .status-inactive {
+            color: #dc3545;
+            font-weight: 500;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Success Message Alert -->
+        <div th:if="${success != null and not #strings.isEmpty(success)}" 
+             class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+        </div>
+
+        <!-- Error Message Alert -->
+        <div th:if="${error != null and not #strings.isEmpty(error)}" 
+             class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <div class="header">
+            <h1 class="page-title">USSD Users</h1>
+            <div style="display: flex; gap: 1rem;">
+                <a href="/admin/dashboard" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phone Number</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Service Provider</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${ussdAccounts != null and ussdAccounts.empty}">
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h3>No USSD Users Found</h3>
+                            <p>Add a new USSD user to get started</p>
+                        </td>
+                    </tr>
+                    <tr th:each="account : ${ussdAccounts}">
+                        <td th:text="${account.phoneNumber}"></td>
+                        <td th:text="${account.firstName}"></td>
+                        <td th:text="${account.lastName}"></td>
+                        <td th:text="${account.serviceProvider}"></td>
+                        <td>$<span th:text="${#numbers.formatDecimal(account.balance, 0, 'POINT', 2, 'COMMA')}"></span></td>
+                        <td>
+                            <span th:class="${account.isActive ? 'status-active' : 'status-inactive'}"
+                                  th:text="${account.isActive ? 'Active' : 'Inactive'}">
+                            </span>
+                        </td>
+                        <td th:text="${#temporals.format(account.lastUpdated, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td>
+                            <div class="action-btns">
+                                <a th:href="@{/admin/ussd/edit/{phoneNumber}(phoneNumber=${account.phoneNumber})}" 
+                                   class="btn btn-edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form th:action="@{/admin/ussd/delete/{phoneNumber}(phoneNumber=${account.phoneNumber})}" 
+                                      method="post" 
+                                      style="display: inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="btn btn-delete">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html> 

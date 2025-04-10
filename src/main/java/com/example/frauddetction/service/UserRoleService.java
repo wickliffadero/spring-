@@ -18,7 +18,7 @@ public class UserRoleService {
     public UseraccountEntity makeUserAdmin(String username) {
         UseraccountEntity user = userAccountRepository.findByUsername(username);
         if (user != null) {
-            user.setRole("ROLE_ADMIN");
+            user.setRole("ADMIN");
             return userAccountRepository.save(user);
         }
         return null;
@@ -35,8 +35,14 @@ public class UserRoleService {
         adminUser.setPassword(passwordEncoder.encode(password));
         adminUser.setEmail(email);
         adminUser.setPhoneNumber(phoneNumber);
-        adminUser.setRole("ROLE_ADMIN");
+        adminUser.setRole("ADMIN");
         
         return userAccountRepository.save(adminUser);
+    }
+
+    public void createUser(String username, String password, String role) {
+    }
+
+    public void deleteUser(String username) {
     }
 }

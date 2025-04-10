@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Check</title>
+</head>
+<body>
+
+<!-- Add this to admin-check.html where the manage users button is -->
+<div class="user-management">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        Add User
+    </button>
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
+        Delete User
+    </button>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/admin/add-user" method="POST">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" name="username" placeholder="Username" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-control" name="role" required>
+                            <option value="USER">User</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/admin/delete-user" method="POST">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" name="username" placeholder="Username to delete" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <h1>Admin Account Check</h1>
+    <p th:text="${message}">Message will appear here</p>
+</body>
+</html>
